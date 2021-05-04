@@ -1,0 +1,6 @@
+*.bak
+*.swp
+output_files
+simulation
+incremental_db
+db
