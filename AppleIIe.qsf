@@ -243,15 +243,6 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -entity DE10_LITE_Defa
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -entity DE10_LITE_Default -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -entity DE10_LITE_Default -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -entity DE10_LITE_Default -section_id Top
-set_global_assignment -name HEX_FILE rom.hex
-set_global_assignment -name SYSTEMVERILOG_FILE dram_bundle.sv
-set_global_assignment -name SYSTEMVERILOG_FILE HexDriver.sv
-set_global_assignment -name INCLUDE_FILE logic.inc
-set_global_assignment -name INCLUDE_FILE chip_6502_nodes.inc
-set_global_assignment -name VERILOG_FILE MUX.v
-set_global_assignment -name VERILOG_FILE DAC.v
-set_global_assignment -name VERILOG_FILE chip_6502.v
-set_global_assignment -name SYSTEMVERILOG_FILE AppleIIe.sv
 set_global_assignment -name ENABLE_OCT_DONE ON
 set_global_assignment -name EXTERNAL_FLASH_FALLBACK_ADDRESS 00000000
 set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
@@ -261,4 +252,15 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name QIP_FILE apple_kb/synthesis/apple_kb.qip
+set_global_assignment -name SYSTEMVERILOG_FILE MMU.sv
+set_global_assignment -name HEX_FILE rom.hex
+set_global_assignment -name SYSTEMVERILOG_FILE dram_bundle.sv
+set_global_assignment -name SYSTEMVERILOG_FILE HexDriver.sv
+set_global_assignment -name INCLUDE_FILE logic.inc
+set_global_assignment -name INCLUDE_FILE chip_6502_nodes.inc
+set_global_assignment -name VERILOG_FILE MUX.v
+set_global_assignment -name VERILOG_FILE DAC.v
+set_global_assignment -name VERILOG_FILE chip_6502.v
+set_global_assignment -name SYSTEMVERILOG_FILE AppleIIe.sv
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
