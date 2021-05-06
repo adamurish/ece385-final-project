@@ -1,23 +1,25 @@
-module PAL (input clk,
-				output M14, M7, phase1_clk, phase2_clk);
+module PAL (input pll_14m, pll_q3
+				output clk_M7, clk_M3_5, phase1_clk, phase2_clk);
 							
 
-logic divisor = 8'd50;
-logic counter = 8'd0;
-logic M1_out;		//1 MHz signal to base other signals off of
+//~7 MHz
+ always_ff @ (posedge pll_14m)
+    begin 
+       clk_M7 <= ~ (clk_M7);
+    end
+	 
+//~3.5 MHz
+always_ff @ (posedge clk_M7)
+	begin
+		clk_M3_5 <= ~ (clk_M3_5);
+	end
 
-
-always @ (posedge(clk))
-begin	
-	counter <= counter + 8'd1;
-	if(counter >= (divisor-1)) counter <= 8'd0;
+//1.0227 MHz
+always_ff @ (posedge pll_q3)
+	begin
+		phase1_clk <= ~ (phase1_clk);
+		phase2_clk <= phase1_clk;
+	end
 	
-	if(counter < divisor/2)
-		M1_out <= 1'b1;
-	else
-		M1_out <= 1'b0;	
-end
-
-
-
+	
 endmodule
