@@ -57,4 +57,4 @@ module ay_3600_pro(
 			default: md_out = 6'bx;
 		endcase
 	end
-			
+endmodule

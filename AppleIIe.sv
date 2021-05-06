@@ -80,18 +80,22 @@ module AppleIIe (
 		.usb_rst_export(USB_RST),
 		.usb_irq_export(USB_IRQ),
 		.usb_gpx_export(USB_GPX),
-		.keycode_export(keycode));
+		.keycode_export(keycode),
+		//PLL CLOCKS
+		.pll_14m_clk(),
+		.pll_q3_clk());
 	
 	logic [15:0] address;
 	logic rw;
+	logic [7:0] md_in, md_out;
 	
-	chip_6502 CPU(.clk(MAX10_CLK1_50), .phi(KEY[0]), .nmi(1), .irq(1), .res(KEY[1]), .rdy(1), .so(1), .ab(address), .rw, .dbo(), .dbi());
-//	dram_bundle dram(.clk(MAX10_CLK1_50), .rw, .A(address), .md_in(dram_in), .md_out(dram_out));
+	chip_6502 CPU(.clk(MAX10_CLK1_50), .phi(MAX10_CLK1_50), .nmi(1), .irq(1), .res(KEY[1]), .rdy(1), .so(1), .ab(address), .rw, .dbo(md_out), .dbi(md_in));
+	MMU mmu0 (.A(address), .md_in(md_out), .phi0(MAX10_CLK1_50), .rw, .md_out(md_in));
 	
 	HexDriver h0 (.In0(address[3:0]), .Out0(HEX0));
 	HexDriver h1 (.In0(address[7:4]), .Out0(HEX1));
 	HexDriver h2 (.In0(address[11:8]), .Out0(HEX2));
 	HexDriver h3 (.In0(address[15:12]), .Out0(HEX3));
-	HexDriver h4 (.In0(keycode[3:0]), .Out0(HEX4));
-	HexDriver h5 (.In0(keycode[7:4]), .Out0(HEX5));
+	HexDriver h4 (.In0(md_in[3:0]), .Out0(HEX4));
+	HexDriver h5 (.In0(md_in[7:4]), .Out0(HEX5));
 endmodule
