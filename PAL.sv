@@ -1,4 +1,4 @@
-module PAL (input pll_14m, pll_q3
+module PAL (input pll_14m, pll_q3,
 				output clk_M7, clk_M3_5, phase1_clk, phase2_clk);
 							
 

@@ -69,6 +69,9 @@ module ay_3600_pro(
 			8'd80: md_out = 6'd8;
 			8'd81: md_out = 6'd10;
 			8'd82: md_out = 6'd11;
+			8'd51: md_out = 7'd58;
+			8'd45: md_out = 7'd45;
+			8'd46: md_out = 7'd43;
 			default: 
 			begin
 				md_out = 6'bx;
