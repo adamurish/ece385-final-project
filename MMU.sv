@@ -1,10 +1,10 @@
 module MMU(
-	input[15:0] A, // address
+	input[15:0] A, vid_A, // address
 	input[7:0] md_in,
 	input phi0, //timing signals
-	input rw, //read write control (r/w`)
+	input rw, vidr, //read write control (r/w`) and video read signal
 	output kbd, c0xx,
-	output[7:0] md_out);
+	output[7:0] md_out, vid_out);
 	
 	// SOFT SWITCHES
 	logic PAGE2 = 0;
@@ -14,6 +14,7 @@ module MMU(
 	
 	logic [7:0] main_ram [49152]; 		//x0000 - xBFFF
 	logic [7:0] main_ram_out;
+	logic [7:0] main_ram_vid_out;
 	logic [7:0] banked_ram_4k1 [4096];	//xD000 - xDFFF (BANK 1)
 	logic [7:0] banked_ram_4k1_out;
 	logic [7:0] banked_ram_4k2 [4096];	//xD000 - xDFFF (BANK 2)
@@ -27,10 +28,30 @@ module MMU(
 	initial
 	begin
 		$readmemh("rom.hex", rom);
+		$readmemh("calc.txt", main_ram, 24576);
+		$readmemh("start.txt", main_ram, 1152);
 	end
 	
 	logic top;
 	logic in_4k;
+	
+	always_comb
+	begin
+		if(A == 16'hC000 | A == 16'hC010 | A[15:8] == 8'hC0) //SOME SORT OF IO OPERATION
+		begin
+			c0xx = 1;	//IO ENABLE SIGNAL FOR IOU
+			if(A == 16'hC000) kbd = 1; //KEYBOARD DATA LOCATION
+			else 
+			begin
+				kbd = 0;
+			end
+		end
+		else
+		begin
+			c0xx = 0;
+			kbd = 0;
+		end
+	end
 	
 	always_ff @ (posedge phi0)
 	begin
@@ -40,23 +61,20 @@ module MMU(
 		banked_ram_out <= banked_ram[A - 16'hE000];
 		rom_out <= rom[A - 16'hC000];
 		
+		
 		top <= A > 16'hC000;
 		in_4k <= top & A < 16'hE000;
 		
-		if(A == 16'hC0XX) //SOME SORT OF IO OPERATION
-		begin
-			c0xx <= 1;	//IO ENABLE SIGNAL FOR IOU
-			if(A == 16'hC000) kbd <= 1; //KEYBOARD DATA LOCATION
-			else kbd <= 0;
-			md_out <= 8'bx;	//MD WILL BE HANDLED BY KB OR BY IOU
+		if(vidr) begin
+			vid_out <= main_ram[vid_A];
+			md_out <= 8'bx;
 		end
-		
-		if(~top) md_out <= main_ram_out;
+		else if(~top) md_out <= main_ram_out;
 		else if(~BANKED_RAM) md_out <= rom_out;	//ADDRESS ABOVE IO, BANKED RAM OFF
 		else if(~in_4k) md_out <= banked_ram_out; 	//regular banked ram
 		else md_out <= BANK2 ? banked_ram_4k2_out : banked_ram_4k1_out;	//BANKED RAM 4k BLOCKS
 		
-		if(~rw)
+		if(~rw & ~vidr)
 		begin
 			if(~top) main_ram[A] <= md_in;
 			else if(BANKED_RAM & ~in_4k) banked_ram[A - 16'hE000] <= md_in; 	//regular banked ram

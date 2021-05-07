@@ -55,6 +55,7 @@ module AppleIIe (
 	//Assign uSD CS to '1' to prevent uSD card from interfering with USB Host (if uSD card is plugged in)
 	assign ARDUINO_IO[6] = 1'b1;
 	
+	logic q3, vid14m;
 	apple_kb keyboard(
 		.clk_clk                           (MAX10_CLK1_50),  //clk.clk
 		.reset_reset_n                     (1'b1),           //reset.reset_n
@@ -82,20 +83,48 @@ module AppleIIe (
 		.usb_gpx_export(USB_GPX),
 		.keycode_export(keycode),
 		//PLL CLOCKS
-		.pll_14m_clk(),
-		.pll_q3_clk());
+		.pll_14m_clk(vid14m),
+		.pll_q3_clk(q3));
 	
-	logic [15:0] address;
-	logic rw;
-	logic [7:0] md_in, md_out;
+	logic [15:0] cpu_address;
+	logic [15:0] vid_address, mmu_address;
+	logic cpu_rw, iou_rw, mmu_rw, kbd, c0xx, akd, iou_md7, kstrb;
+	logic [7:0] mmu_in, mmu_out, vid_out, cpu_d_in;
+	logic [6:0] encoder_out;
+	logic [9:0] DrawX, DrawY;
 	
-	chip_6502 CPU(.clk(MAX10_CLK1_50), .phi(MAX10_CLK1_50), .nmi(1), .irq(1), .res(KEY[1]), .rdy(1), .so(1), .ab(address), .rw, .dbo(md_out), .dbi(md_in));
-	MMU mmu0 (.A(address), .md_in(md_out), .phi0(MAX10_CLK1_50), .rw, .md_out(md_in));
+	//CLOCK SIGNALS
+	logic phi0, vid7m;
 	
-	HexDriver h0 (.In0(address[3:0]), .Out0(HEX0));
-	HexDriver h1 (.In0(address[7:4]), .Out0(HEX1));
-	HexDriver h2 (.In0(address[11:8]), .Out0(HEX2));
-	HexDriver h3 (.In0(address[15:12]), .Out0(HEX3));
-	HexDriver h4 (.In0(md_in[3:0]), .Out0(HEX4));
-	HexDriver h5 (.In0(md_in[7:4]), .Out0(HEX5));
+	always_ff @ (posedge vid14m) vid7m <= ~vid7m;
+	
+	always_ff @ (posedge q3) phi0 <= ~phi0;
+//	assign phi0 = KEY[0];
+	
+	
+	assign mmu_address = phi0 ? cpu_address : vid_address;
+	assign mmu_rw = phi0 ? cpu_rw : iou_rw;
+	assign cpu_d_in = c0xx ? {iou_md7, encoder_out} : mmu_out;
+	
+	chip_6502 CPU(.clk(MAX10_CLK1_50), .phi(phi0), .nmi(1), .irq(1), .res(KEY[1]), .rdy(1), .so(1), .ab(cpu_address), .rw(cpu_rw), .dbo(mmu_in), .dbi(cpu_d_in));
+	MMU mmu0 (.A(cpu_address), .md_in(mmu_in), .phi0(MAX10_CLK1_50), .rw(cpu_rw), .md_out(mmu_out), .vid_A(vid_address), .vidr(iou_rw), .vid_out, .kbd, .c0xx);
+	
+	logic pixel_clk, bw_pixel;
+//	assign pixel_clk = vid7m;
+
+	ay_3600_pro kbd_encoder(.phi0, .keycode, .md_out(encoder_out), .akd, .kstrb);
+	IOU iou0 (.pixel_clk, .bw_pixel, .vid(vid_out), .vid_address_out(vid_address), .rw(iou_rw), .phi0, .DrawX, .DrawY, .c0xx, .akd, .kstrb, .address_in(cpu_address), .md7(iou_md7));
+	vga_controller vga0 (.Clk(MAX10_CLK1_50), .hs(VGA_HS), .vs(VGA_VS), .DrawX, .DrawY, .pixel_clk);
+	
+	assign VGA_R = bw_pixel ? 4'h2 : 4'h0;
+	assign VGA_G = bw_pixel ? 4'hf : 4'h0;
+	assign VGA_B = bw_pixel ? 4'h2 : 4'h0;
+	
+	
+	HexDriver h0 (.In0(mmu_address[3:0]), .Out0(HEX0));
+	HexDriver h1 (.In0(mmu_address[7:4]), .Out0(HEX1));
+	HexDriver h2 (.In0(mmu_address[11:8]), .Out0(HEX2));
+	HexDriver h3 (.In0(mmu_address[15:12]), .Out0(HEX3));
+	HexDriver h4 (.In0(mmu_out[3:0]), .Out0(HEX4));
+	HexDriver h5 (.In0(mmu_out[7:4]), .Out0(HEX5));
 endmodule
